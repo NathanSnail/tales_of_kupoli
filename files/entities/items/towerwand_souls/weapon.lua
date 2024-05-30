@@ -46,8 +46,8 @@ gun.spread_degrees = -1
 gun.speed_multiplier = 1.3
 gun.mana_charge_speed = {500,650}
 gun.mana_max = {900,1100}
-gun.actions_mod = {"KUPOLI_SOULS_TO_POWER","KUPOLI_REAPING_SHOT","KUPOLI_SOUL_IS_MANA", "KUPOLI_SOUL_SPEED","KUPOLI_RANDOM_REAP"}
-gun.actions_proj = {"KUPOLI_SOUL_BLAST","KUPOLI_SOUL_BALL","KUPOLI_SOUL_NECROMANCY"}
+gun.actions_mod = {"KUPOLI_SOULS_TO_POWER","KUPOLI_REAPING_SHOT","KUPOLI_SOUL_IS_MANA", "KUPOLI_SOUL_SPEED", "KUPOLI_RANDOM_REAP", "KUPOLI_SOULDOS"}
+gun.actions_proj = {"KUPOLI_SOUL_BLAST","KUPOLI_SOUL_BALL","KUPOLI_SOUL_NECROMANCY", "KUPOLI_SOUL_ARROW"}
 
 local mana_max = get_random_between_range( gun.mana_max )
 local deck_capacity = gun.deck_capacity

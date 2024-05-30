@@ -10,9 +10,9 @@ dofile_once("mods/tales_of_kupoli/files/scripts/souls.lua")
 
 local nxml = dofile_once("mods/tales_of_kupoli/lib/nxml.lua")
 
-if ModSettingGet("tales_of_kupoli.alt_map") then
+--[[if ModSettingGet("tales_of_kupoli.alt_map") then
     ModMagicNumbersFileAdd( "mods/tales_of_kupoli/files/magic_numbers.xml" )
-end
+end]]
 
 -- set & append
 ModLuaFileAppend( "data/scripts/gun/gun_actions.lua", "mods/tales_of_kupoli/files/actions.lua" )
@@ -20,6 +20,8 @@ ModLuaFileAppend( "data/scripts/perks/perk_list.lua", "mods/tales_of_kupoli/file
 ModLuaFileAppend( "data/scripts/status_effects/status_list.lua", "mods/tales_of_kupoli/files/status_list.lua" )
 ModLuaFileAppend( "data/scripts/items/orb_pickup.lua", "mods/tales_of_kupoli/files/scripts/orb_pickup_append.lua" )
 ModLuaFileAppend( "data/scripts/items/drop_money.lua", "mods/tales_of_kupoli/files/scripts/drop_money_append.lua" )
+--ModLuaFileAppend( "data/scripts/biome/temple_altar_left.lua", "mods/tales_of_kupoli/files/scripts/temple_altar_left_things.lua" )
+--ModLuaFileAppend( "data/scripts/biome/temple_altar_left_empty.lua", "mods/tales_of_kupoli/files/scripts/temple_altar_left_things.lua" )
 ModLuaFileAppend( "data/scripts/gun/gun.lua", "mods/tales_of_kupoli/files/scripts/gun_append.lua" )
 --ModLuaFileAppend( "data/scripts/biomes/orbrooms/orbroom_07.lua", "mods/tales_of_kupoli/files/scripts/orbroom_07_append.lua" )
 
@@ -36,6 +38,7 @@ SetFileContent("data/entities/projectiles/deck/cloud_oil.xml", "cloud_oil.xml")
 SetFileContent("data/entities/projectiles/deck/cloud_water.xml", "cloud_water.xml")
 SetFileContent("data/entities/projectiles/deck/cloud_acid.xml", "cloud_acid.xml")
 SetFileContent("data/scripts/biomes/tower_end.lua", "tower_end.lua")
+--SetFileContent("data/scripts/biomes/temple_altar.lua", "temple_altar.lua")
 SetFileContent("data/entities/buildings/teleport_liquid_powered.xml", "teleport_liquid_powered.xml")
 
 local xml = nxml.parse(ModTextFileGetContent("data/entities/animals/boss_centipede/ending/ending_sampo_spot_mountain.xml"))
@@ -62,6 +65,10 @@ local biomes = {
     {
         path = "data/scripts/biomes/crypt.lua",
         script = "mods/tales_of_kupoli/files/scripts/biome/crypt.lua",
+    },
+    {
+        path = "data/scripts/biomes/coalmine.lua",
+        script = "mods/tales_of_kupoli/files/scripts/biome/coalmine.lua",
     },
 }
 for i,v in ipairs(biomes) do
@@ -289,12 +296,14 @@ function OnPlayerSpawned( player )
 
     --for i=1,100 do AddSoul("slimes") GamePrintImportant("REMINDER TO REMOVE THE DEBUG SOULS", "GO DO THAT MOLDOS") end
     --for i=1,4 do EntityLoad("mods/tales_of_kupoli/files/entities/revived/_tablets/alchemist.xml", px, py) end
-    for i=1,2 do EntityLoad("mods/tales_of_kupoli/files/entities/items/moldos_special/weapon.xml", px, py) end
-    --for i=1,2 do EntityLoad("mods/tales_of_kupoli/files/entities/items/hiisisniper/weapon.xml", px, py) end
+    --for i=1,2 do EntityLoad("mods/tales_of_kupoli/files/entities/items/moldos_special/weapon.xml", px, py) end
+    --for i=1,2 do EntityLoad("mods/tales_of_kupoli/files/entities/items/towerwand_gift/weapon.xml", px, py) end
     --for i=1,4 do EntityLoad("mods/tales_of_kupoli/files/entities/items/amethyst_orb/item.xml", px, py) end
     --GameAddFlagRun("kupoli_better_weapons")
     --for i=1,2 do EntityLoad("mods/tales_of_kupoli/files/entities/items/darklukkirifle/weapon.xml", px, py) end
     --for i=1,2 do EntityLoad("mods/tales_of_kupoli/files/entities/items/hiisisniper/weapon.xml", px, py) end
+    --for i=1,1 do EntityLoad("data/entities/animals/kupoli_bluesun_mimic.xml", px, py) end
+    --for i=1,1000 do AddSoul("gilded") end
     --CreateItemActionEntity("KUPOLI_OPEN_GATE", px, py)
 
     --[[EntityAddComponent2(player, "LuaComponent", {
@@ -319,19 +328,30 @@ function OnPlayerSpawned( player )
         value_int=0,
     })
     EntityAddComponent2(player, "VariableStorageComponent", {
-        _tags="kickcd",
+        _tags="cd",
         name="kickcd",
         value_int=0,
     })
+
+    --[[EntityAddComponent2(player, "LuaComponent", {
+        script_source_file="mods/tales_of_kupoli/files/scripts/player_kick.lua",
+        execute_every_n_frame="1",
+    })
+
+    EntityAddComponent2(player, "VariableStorageComponent", {
+        _tags="soul_kick_cd",
+        name="soul_kick_cd",
+        value_int=0,
+    })]]--
 
     --AddFlagPersistent("progress_greensun")
     --AddFlagPersistent("progress_redsun")
     --AddFlagPersistent("progress_bluesun")
 
-    if HasFlagPersistent("progress_greensun") and HasFlagPersistent("progress_redsun") and HasFlagPersistent("progress_bluesun") then
+    --[[if HasFlagPersistent("progress_greensun") and HasFlagPersistent("progress_redsun") and HasFlagPersistent("progress_bluesun") then
         EntitySetComponentsWithTagEnabled( player, "player_hat2", false )
         EntitySetComponentsWithTagEnabled( player, "player_hat", true ) -- placeholder hat
-    end
+    end]]--
 
     if ModSettingGet( "tales_of_kupoli.mina_pearl" ) then
         EntityLoad("mods/tales_of_kupoli/files/entities/items/minapearl/mina_pearl.xml", px + 5, py)
@@ -385,6 +405,9 @@ local xml = nxml.parse(content)
 for element in xml:each_child() do
     if element.attr.name == "magic_liquid_hp_regeneration" or element.attr.name == "magic_liquid_hp_regeneration_unstable" then
         element.attr.tags = "[liquid],[water],[magic_liquid],[regenerative],[greensun_fuel],[sunbaby_ignore_list]"
+    end
+    if element.attr.name == "radioactive_liquid" then
+        element.attr.tags = "[liquid],[corrodible],[soluble],[radioactive],[impure],[liquid_common],[greensun_fuel],[sunbaby_ignore_list]"
     end
 end
 ModTextFileSetContent("data/materials.xml", tostring(xml))

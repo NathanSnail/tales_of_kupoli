@@ -1,13 +1,15 @@
 dofile_once("mods/tales_of_kupoli/files/scripts/utils.lua")
 dofile_once("mods/tales_of_kupoli/files/scripts/souls.lua")
 
-function UpgradeTome(path, amount)
+function UpgradeTome(path, amount, is_better)
 	if path == 0 then
 		GamePrint("You must select an upgrade first.")
 		return
 	end
     local tome = EntityGetWithTag("kupoli_tome")[1]
-    local comp_path_1 = EntityGetFirstComponentIncludingDisabled(tome, "VariableStorageComponent", "path_1") or 0
+    local comp_cost = EntityGetFirstComponentIncludingDisabled(tome, "VariableStorageComponent", "upgrade_cost") or 0
+    local cost = ComponentGetValue2(comp_cost, "value_int")
+	local comp_path_1 = EntityGetFirstComponentIncludingDisabled(tome, "VariableStorageComponent", "path_1") or 0
     local path_1 = ComponentGetValue2(comp_path_1, "value_int")
     local comp_path_2 = EntityGetFirstComponentIncludingDisabled(tome, "VariableStorageComponent", "path_2") or 0
     local path_2 = ComponentGetValue2(comp_path_2, "value_int")
@@ -15,65 +17,98 @@ function UpgradeTome(path, amount)
     local path_3 = ComponentGetValue2(comp_path_3, "value_int")
 	local comp_path_4 = EntityGetFirstComponentIncludingDisabled(tome, "VariableStorageComponent", "path_4") or 0
     local path_4 = ComponentGetValue2(comp_path_4, "value_int")
+	local comp_path_5 = EntityGetFirstComponentIncludingDisabled(tome, "VariableStorageComponent", "path_5") or 0
+    local path_5 = ComponentGetValue2(comp_path_5, "value_int")
     local ac = EntityGetFirstComponentIncludingDisabled( tome, "AbilityComponent" ) or 0
     local cap = tonumber( ComponentObjectGetValue( ac, "gun_config", "deck_capacity" ) ) -- deck capacity 
     local rt = tonumber( ComponentObjectGetValue( ac, "gun_config", "reload_time" ) ) -- reload time
     local frw = tonumber( ComponentObjectGetValue( ac, "gunaction_config", "fire_rate_wait" ) ) -- fire rate wait
-    if path == 1 then -- upgrade capacity
-		GamePrint("Upgrading capacity!")
-        for i=1,amount do
-            cap = cap + 3
-            if cap > 27 then
-                cap = 27
-                GamePrint("Max capacity reached!")
-            end
-            rt = rt * 1
-            frw = frw * 1
-        end
-        path_1 = path_1 + amount
-    end
-    if path == 2 then -- upgrade recharge time
-		GamePrint("Upgrading recharge time!")
-        for i=1,amount do
-            cap = cap - 2
-            if cap < 5 then
-                cap = 5
-                GamePrint("Minimum capacity reached.")
-            end
-            rt = rt * 0.7
-            frw = frw * 1.1
-        end
-        path_2 = path_2 + amount
-    end
-    if path == 3 then -- upgrade cast delay
-		GamePrint("Upgrading cast delay!")
-        for i=1,amount do
-            cap = cap - 2
-            if cap < 5 then
-                cap = 5
-                GamePrint("Minimum capacity reached.")
-            end
-            rt = rt * 1.1
-            frw = frw * 0.7
-        end
-        path_3 = path_3 + amount
-    end
-	--[[if path == 4 then -- defensive ability
-		GamePrint("Upgrading defensive ability!")
-		path_4 = path_4 + amount
-		cap = cap - 1
-        if cap < 5 then
-            cap = 5
-            GamePrint("Minimum capacity reached.")
-        end
-	end]]--
-    ComponentSetValue2(comp_path_1, "value_int", path_1)
-    ComponentSetValue2(comp_path_2, "value_int", path_2)
-    ComponentSetValue2(comp_path_3, "value_int", path_3)
-	ComponentSetValue2(comp_path_4, "value_int", path_4)
-    ComponentObjectSetValue( ac, "gun_config", "deck_capacity", tostring(cap) )
-    ComponentObjectSetValue( ac, "gun_config", "reload_time", tostring(rt) )
-    ComponentObjectSetValue( ac, "gunaction_config", "fire_rate_wait", tostring(frw) )
+	local mcs = tonumber( ComponentGetValue2( ac, "mana_charge_speed" ) ) -- mana charge speed
+	local mm = tonumber( ComponentGetValue2( ac, "mana_max" ) ) -- mana max
+	if is_better then
+		cost = math.floor((cost / 2) + 0.5)
+	end
+	if GetSoulsCount("all") >= cost then
+		RemoveSouls(cost)
+		if path == 1 then -- upgrade capacity
+			GamePrint("Upgrading capacity!")
+			for i=1,amount do
+				cap = cap + 3
+				if cap > 30 then
+					cap = 30
+					GamePrint("Max capacity reached!")
+				end
+				rt = rt * 1
+				frw = frw * 1
+			end
+			path_1 = path_1 + amount
+		end
+		if path == 2 then -- upgrade recharge time
+			GamePrint("Upgrading recharge time!")
+			for i=1,amount do
+				cap = cap - 2
+				if cap < 5 then
+					cap = 5
+					GamePrint("Minimum capacity reached.")
+				end
+				rt = rt * 0.7
+				frw = frw * 1.1
+			end
+			path_2 = path_2 + amount
+		end
+		if path == 3 then -- upgrade cast delay
+			GamePrint("Upgrading cast delay!")
+			for i=1,amount do
+				cap = cap - 2
+				if cap < 5 then
+					cap = 5
+					GamePrint("Minimum capacity reached.")
+				end
+				rt = rt * 1.1
+				frw = frw * 0.7
+			end
+			path_3 = path_3 + amount
+		end
+		if path == 4 then -- mana max
+			for i=1,amount do
+				cap = cap - 2
+				if cap < 5 then
+					cap = 5
+					GamePrint("Minimum capacity reached.")
+				end
+				mm = mm * 1.45
+			end
+			path_4 = path_4 + amount
+		end
+		if path == 5 then -- mana charge speed
+			for i=1,amount do
+				cap = cap - 2
+				if cap < 5 then
+					cap = 5
+					GamePrint("Minimum capacity reached.")
+				end
+				mcs = mcs * 1.45
+			end
+			path_5 = path_5 + amount
+		end
+		cost = cost * 1.25
+		cost = math.floor(cost + 0.5)
+		GamePrint("Next upgrade will cost " .. cost .. " souls.")
+		if cost > 30 then
+			cost = 30
+		end
+		ComponentSetValue2(comp_path_1, "value_int", path_1)
+		ComponentSetValue2(comp_path_2, "value_int", path_2)
+		ComponentSetValue2(comp_path_3, "value_int", path_3)
+		ComponentSetValue2(comp_path_4, "value_int", path_4)
+		ComponentSetValue2(comp_path_5, "value_int", path_5)
+		ComponentSetValue2(comp_cost , "value_int", cost)
+		ComponentObjectSetValue( ac, "gun_config", "deck_capacity", tostring(cap) )
+		ComponentObjectSetValue( ac, "gun_config", "reload_time", tostring(rt) )
+		ComponentObjectSetValue( ac, "gunaction_config", "fire_rate_wait", tostring(frw) )
+		ComponentSetValue2( ac, "mana_charge_speed", mcs )
+		ComponentSetValue2( ac, "mana_max", mm )
+	end
 end
 
 actions_to_insert = {
@@ -124,7 +159,7 @@ actions_to_insert = {
 		spawn_level                       = "2,3,4,5,6,10",
 		spawn_probability                 = "1,0.9,0.9,0.9,0.8,0.8",
 		price = 120,
-		mana = 70,
+		mana = 50,
 		action 		= function()
 			c.extra_entities = c.extra_entities .. "mods/tales_of_kupoli/files/entities/projectiles/souls_to_power/souls_to_power.xml,"
 			c.fire_rate_wait    = c.fire_rate_wait + 20
@@ -550,7 +585,7 @@ actions_to_insert = {
 		price = 140,
 		mana = 0,
 		action 		= function()
-			dofile_once("mods/tales_of_kupoli/files/scripts/souls.lua")	
+			dofile_once("mods/tales_of_kupoli/files/scripts/souls.lua")
 			if not reflecting then
 				if GetSoulsCount("all") > 0 then
 					local data = {}
@@ -889,7 +924,6 @@ actions_to_insert = {
 		spawn_probability                 = "0.05,1",
 		price = 160,
 		mana = 37,
-		max_uses = 50,
 		action 		= function()
 			c.extra_entities = c.extra_entities .. "mods/tales_of_kupoli/files/entities/projectiles/souldos/reaping_shot.xml,"
 			c.fire_rate_wait = c.fire_rate_wait + 15
@@ -926,7 +960,7 @@ actions_to_insert = {
 		price = 300,
 		mana = 100,
 		action 		= function()
-			dofile_once("mods/tales_of_kupoli/files/scripts/souls.lua")		
+			dofile_once("mods/tales_of_kupoli/files/scripts/souls.lua")
 			local card = GetUpdatedEntityID()
 			local x, y = EntityGetTransform(GetPlayer())
 			local wand = 0
@@ -1471,6 +1505,7 @@ actions_to_insert = {
 		mana = 1000,
 		action 		= function()
 			if reflecting then return end
+			dofile_once("mods/tales_of_kupoli/files/scripts/utils.lua")
 
 			local entity = GetUpdatedEntityID()
 			local x, y = EntityGetTransform(entity)
@@ -1548,7 +1583,7 @@ actions_to_insert = {
 		price = 100,
 		mana = 0,
 		action 		= function()
-			local souls_to_use = 0
+			--[[local souls_to_use = 0
 			if not reflecting then
 				dofile("mods/tales_of_kupoli/files/scripts/souls.lua")
 				if GetSoulsCount("all") > 0 then
@@ -1574,7 +1609,7 @@ actions_to_insert = {
 				elseif GetSoulsCount("all") <= 0 then
 					GamePrint("You do not have enough souls!")
 				end
-			end
+			end]]
 		end,
 	},
 	{
@@ -1589,7 +1624,7 @@ actions_to_insert = {
 		spawn_level                       = "",
 		spawn_probability                 = "",
 		price = 100,
-		mana = 600,
+		mana = 0,
 		custom_xml_file="mods/tales_of_kupoli/files/entities/misc/card_tome_shot.xml",
 		action 		= function()
 			dofile_once("mods/tales_of_kupoli/files/scripts/souls.lua")
@@ -1611,38 +1646,89 @@ actions_to_insert = {
 
 			c.fire_rate_wait = c.fire_rate_wait + 10
 
-			if wand == tome then
-				if ca == 1 then -- tome shot
-					c.spread_degrees = c.spread_degrees + 13.0
-					c.screenshake = c.screenshake + 2
-					c.damage_critical_chance = c.damage_critical_chance + 2
-					add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_shot/proj.xml")
-					add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_shot/proj.xml")
-					add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_shot/proj.xml")
-					add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_shot/proj.xml")
+			if GetSoulsCount("all") >= 3 then
+				if wand == tome then
+					if ca == 1 then -- tome shot
+						c.spread_degrees = c.spread_degrees + 13.0
+						c.screenshake = c.screenshake + 2
+						c.damage_critical_chance = c.damage_critical_chance + 2
+						add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_shot/proj.xml")
+						add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_shot/proj.xml")
+						add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_shot/proj.xml")
+						add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_shot/proj.xml")
+					end
+					if ca == 2 then -- tome seek
+						c.spread_degrees = c.spread_degrees + 15.0
+						add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml")
+						add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml")
+						add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml")
+						add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml")
+						add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml")
+						add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml")
+						add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml")
+					end
+					if ca == 3 then -- tome bomb
+						c.fire_rate_wait = c.fire_rate_wait + 10
+						add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_bomb/proj.xml")
+					end
+					RemoveSouls(3)
 				end
-				if ca == 2 then -- tome seek
-					c.spread_degrees = c.spread_degrees + 15.0
-					add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml")
-					add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml")
-					add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml")
-					add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml")
-					add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml")
-				end
-				if ca == 3 then -- tome bomb
-					c.fire_rate_wait = c.fire_rate_wait + 10
-					add_projectile("mods/tales_of_kupoli/files/entities/projectiles/tome_bomb/proj.xml")
-				end
+			else
+				GamePrint("You do not have enough souls for this.")
 			end
 		end,
 	},
+	--[[{
+		id          = "TOME_CHARGE",
+		name 		= "$action_kupoli_tome_charge",
+		sprite 		= "mods/tales_of_kupoli/files/spell_icons/tome_charge/0.png",
+		description = "$actiondesc_kupoli_tome_charge",
+		type 		= ACTION_TYPE_MODIFIER,
+		inject_after = "KUPOLI_TOME_SHOT",
+		spawn_level                       = "",
+		spawn_probability                 = "",
+		price = 0,
+		mana = 0,
+		custom_xml_file="mods/tales_of_kupoli/files/entities/misc/card_tome_charge.xml",
+		action 		= function()
+			dofile_once("mods/tales_of_kupoli/files/scripts/souls.lua")
+
+			if reflecting then return end
+
+			local entity = GetUpdatedEntityID()
+			local x, y = EntityGetTransform(entity)
+
+			local wand = 0
+			local inv_comp = EntityGetFirstComponentIncludingDisabled(entity, "Inventory2Component")
+			if inv_comp then
+				wand = ComponentGetValue2(inv_comp, "mActiveItem")
+			end
+
+			local tome = EntityGetWithTag("kupoli_tome")[1] or 1
+			local comp_cc = EntityGetFirstComponentIncludingDisabled(tome, "VariableStorageComponent", "current_charge") or 0
+			local cc = ComponentGetValue2(comp_ca, "value_int")
+
+			if wand == tome then
+				if cc < 5 then
+					cc = cc + 1
+				elseif cc >= 5 then
+					cc = 0
+					c.damage_projectile_add = c.damage_projectile_add + 0.5
+					c.extra_entities = c.extra_entities .. "mods/tales_of_kupoli/files/entities/projectiles/reaping_shot/reaping_shot.xml,"
+					GamePrint("Power!")
+				end
+				ComponentSetValue2(comp_cc, "value_int", cc)
+			end
+			draw_actions(1, true)
+		end,
+	},]]--
 	{
 		id          = "UPGRADE_TOME",
 		name 		= "$action_kupoli_upgrade_tome",
 		description = "$actiondesc_kupoli_upgrade_tome",
 		sprite 		= "mods/tales_of_kupoli/files/spell_icons/tome_upgrade.png",
 		type 		= ACTION_TYPE_UTILITY,
-		inject_after = "KUPOLI_TOME_SHOT",
+		inject_after = "KUPOLI_TOME_CHARGE",
 		spawn_level                       = "",
 		spawn_probability                 = "",
 		price = 100,
@@ -1668,12 +1754,7 @@ actions_to_insert = {
 				if wand == tome then
 					c.fire_rate_wait = c.fire_rate_wait + 20
 					current_reload_time = current_reload_time + 20
-					if GetSoulsCount("all") >= 15 then
-						UpgradeTome(cu, 1)
-						RemoveSouls(15)
-					else
-						GamePrint("You do not have enough souls for this.")
-					end
+					UpgradeTome(cu, 1, false)
 				else
 					GamePrint("The spell must be casted on the tome.")
 				end
@@ -1712,12 +1793,7 @@ actions_to_insert = {
 				if wand == tome then
 					c.fire_rate_wait = c.fire_rate_wait + 20
 					current_reload_time = current_reload_time + 20
-					if GetSoulsCount("all") >= 5 then
-						UpgradeTome(cu, 1)
-						RemoveSouls(5)
-					else
-						GamePrint("You do not have enough souls for this.")
-					end
+					UpgradeTome(cu, 1, true)
 				else
 					GamePrint("The spell must be casted on the tome.")
 				end
@@ -1775,7 +1851,7 @@ actions_to_insert = {
 		spawn_probability                 = "0.4,0.4,0.4,0.7,0.7",
 		price = 100,
 		mana = 20,
-		max_uses = 30,
+		max_uses = 70,
 		action 		= function()
 			add_projectile("mods/tales_of_kupoli/files/entities/projectiles/soul_arrow/proj.xml")
 			c.fire_rate_wait = c.fire_rate_wait + 5
@@ -1832,86 +1908,7 @@ actions_to_insert = {
 			add_projectile("mods/tales_of_kupoli/files/entities/items/robot_icethrower/proj.xml")
 		end,
 	},
-	--[[{
-		id          = "TOME_BUFF",
-		name 		= "$action_kupoli_tome_buff",
-		description = "$actiondesc_kupoli_tome_buff",
-		sprite 		= "mods/tales_of_kupoli/files/spell_icons/tome_buff.png",
-		sprite_unidentified = "data/ui_gfx/gun_actions/light_bullet_unidentified.png",
-		related_projectiles	= {"mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml"},
-		type 		= ACTION_TYPE_UTILITY,
-		inject_after = "KUPLI_UPGRADE_TOME_BETTER",
-		spawn_level                       = "",
-		spawn_probability                 = "",
-		price = 100,
-		mana = 1000,
-		custom_xml_file="mods/tales_of_kupoli/files/entities/misc/card_tome_buff.xml",
-		action 		= function()
-			dofile_once("mods/tales_of_kupoli/files/scripts/souls.lua")
-
-			if reflecting then return end
-
-			local entity = GetUpdatedEntityID()
-			local x, y = EntityGetTransform(entity)
-
-			local wand = 0
-			local inv_comp = EntityGetFirstComponentIncludingDisabled(entity, "Inventory2Component")
-			if inv_comp then
-				wand = ComponentGetValue2(inv_comp, "mActiveItem")
-			end
-
-			local tome = EntityGetWithTag("kupoli_tome")[1] or 1
-			local comp_ca = EntityGetFirstComponentIncludingDisabled(tome, "VariableStorageComponent", "current_attack") or 0
-			local ca = tonumber(ComponentGetValue(comp_ca, "value_string"))
-
-			c.fire_rate_wait = c.fire_rate_wait + 20
-
-			if wand == tome then
-				if ca == 1 then
-					local buff = EntityLoad("mods/tales_of_kupoli/files/entities/misc/effect_tome_buff_1.xml", x, y)
-					EntityAddChild(entity, buff)
-				end
-				if ca == 2 then
-					local buff = EntityLoad("mods/tales_of_kupoli/files/entities/misc/effect_tome_buff_2.xml", x, y)
-					EntityAddChild(entity, buff)
-				end
-				if ca == 3 then
-					local buff = EntityLoad("mods/tales_of_kupoli/files/entities/misc/effect_tome_buff_3.xml", x, y)
-					EntityAddChild(entity, buff)
-				end
-			end
-		end,
-	},
-	{
-		id          = "TOME_LOOTER",
-		name 		= "$action_kupoli_tome_looter",
-		description = "$actiondesc_kupoli_tome_looter",
-		sprite 		= "mods/tales_of_kupoli/files/spell_icons/tome_looter.png",
-		type 		= ACTION_TYPE_MODIFIER,
-		inject_after = "KUPOLI_TOME_BUFF",
-		spawn_level                       = "",
-		spawn_probability                 = "",
-		price = 200,
-		mana = 0,
-		action 		= function()
-			dofile_once("mods/tales_of_kupoli/files/scripts/souls.lua")
-			if not reflecting then
-				local entity = GetUpdatedEntityID()
-				local x, y = EntityGetTransform(entity)
-				local tome = EntityGetWithTag("kupoli_tome")[1]
-				local wand = 0
-				local inv_comp = EntityGetFirstComponentIncludingDisabled(entity, "Inventory2Component")
-				if inv_comp then
-					wand = ComponentGetValue2(inv_comp, "mActiveItem")
-				end
-				if wand == tome then
-					c.extra_entities = c.extra_entities .. "mods/tales_of_kupoli/files/entities/misc/tome_looter.xml,"
-				else
-					GamePrint("The spell must be casted on the tome.")
-				end
-			end
-		end,
-	},
+	--[[
 	{
 		id          = "TOME_REAP",
 		name 		= "$action_kupoli_tome_reap",
@@ -1942,6 +1939,208 @@ actions_to_insert = {
 			end
 		end,
 	},]]
+	{
+		id          = "WEAKENING_HALO", -- nezha gaming
+		name 		= "$action_kupoli_weakening_halo",
+		description = "$actiondesc_kupoli_weakening_halo",
+		sprite 		= "mods/tales_of_kupoli/files/spell_icons/nezha_chakram.png",
+		related_projectiles	= {"mods/tales_of_kupoli/files/entities/projectiles/weakening_halo/projectile.xml"},
+		type 		= ACTION_TYPE_PROJECTILE,
+		inject_after = "KUPOLI_REAPING_HALO",
+		spawn_level                       = "10",
+		spawn_probability                 = "0.1",
+		price = 500,
+		mana = 100,
+		action 		= function()
+			add_projectile("mods/tales_of_kupoli/files/entities/projectiles/weakening_halo/projectile.xml")
+			c.fire_rate_wait = c.fire_rate_wait + 40
+		end,
+	},
+	{
+		id          = "MAGICAL_RAT_KING",
+		name 		= "$action_kupoli_ratking",
+		description = "$actiondesc_kupoli_ratking",
+		sprite 		= "mods/tales_of_kupoli/files/spell_icons/ratking.png",
+		related_projectiles	= {"mods/tales_of_kupoli/files/entities/projectiles/ratking/proj.xml"},
+		type 		= ACTION_TYPE_PROJECTILE,
+		spawn_level                       = "5,6,10",
+		spawn_probability                 = "0.4,0.4,0.3",
+		price = 270,
+		mana = 100,
+		max_uses = 3,
+		never_unlimited = true,
+		action = function()
+			add_projectile("mods/tales_of_kupoli/files/entities/projectiles/ratking/proj.xml")
+			c.fire_rate_wait = c.fire_rate_wait + 40
+			c.spread_degrees = c.spread_degrees + 6.4
+			shot_effects.recoil_knockback = shot_effects.recoil_knockback + 30.0
+			c.damage_projectile_add = c.damage_projectile_add + 0.2
+		end,
+	},
+	{
+		id = "DETONATOR",
+		name = "$action_kupoli_detonator",
+		description = "$actiondesc_kupoli_detonator",
+        sprite = "mods/tales_of_kupoli/files/spell_icons/detonator.png",
+		related_projectiles	= {"mods/tales_of_kupoli/files/entities/projectiles/detonator/proj.xml"},
+		custom_xml_file="mods/tales_of_kupoli/files/entities/misc/card_detonator.xml",
+		type = ACTION_TYPE_PROJECTILE,
+		inject_after = "KUPOLI_HIISI_MINE",
+		spawn_level                       = "3,4,5,6",
+		spawn_probability                 = "0.4,0.4,0.7,0.7",
+		price = 90,
+		mana = 40,
+		max_uses = 30,
+		action = function()
+			add_projectile("mods/tales_of_kupoli/files/entities/projectiles/detonator/proj.xml")
+		end,
+	},
+	--[[{
+		id          = "TOME_BUFF",
+		name 		= "$action_kupoli_tome_buff",
+		description = "$actiondesc_kupoli_tome_buff",
+		sprite 		= "mods/tales_of_kupoli/files/spell_icons/tome_buff.png",
+		sprite_unidentified = "data/ui_gfx/gun_actions/light_bullet_unidentified.png",
+		related_projectiles	= {"mods/tales_of_kupoli/files/entities/projectiles/tome_seek/proj.xml"},
+		type 		= ACTION_TYPE_UTILITY,
+		inject_after = "KUPLI_UPGRADE_TOME_BETTER",
+		spawn_level                       = "",
+		spawn_probability                 = "",
+		price = 100,
+		mana = 1000,
+		custom_xml_file="mods/tales_of_kupoli/files/entities/misc/card_tome_buff.xml",
+		action 		= function()
+			dofile_once("mods/tales_of_kupoli/files/scripts/souls.lua")
+
+			c.fire_rate_wait = c.fire_rate_wait + 40
+			current_reload_time = current_reload_time + 40
+
+			if reflecting then return end
+
+			local entity = GetUpdatedEntityID()
+			local x, y = EntityGetTransform(entity)
+
+			local wand = 0
+			local inv_comp = EntityGetFirstComponentIncludingDisabled(entity, "Inventory2Component")
+			if inv_comp then
+				wand = ComponentGetValue2(inv_comp, "mActiveItem")
+			end
+
+			local tome = EntityGetWithTag("kupoli_tome")[1] or 1
+			local comp_ca = EntityGetFirstComponentIncludingDisabled(tome, "VariableStorageComponent", "current_attack") or 0
+			local ca = tonumber(ComponentGetValue(comp_ca, "value_string"))
+
+			if wand == tome then
+				if ca == 1 then
+					local buff = "mods/tales_of_kupoli/files/entities/misc/effect_tome_buff_1.xml"
+					--LoadGameEffectEntityTo(entity, buff)
+					GetGameEffectLoadTo(entity, "BERSERK", true)
+					GamePrint("Buffed with BERSERK")
+				end
+				if ca == 2 then
+					local buff = "mods/tales_of_kupoli/files/entities/misc/effect_tome_buff_1.xml"
+					--LoadGameEffectEntityTo(entity, buff)
+					GetGameEffectLoadTo(entity, "MOVEMENT_FASTER_2X", true)
+					GamePrint("Buffed with AGILITY")
+				end
+				if ca == 3 then
+					local buff = "mods/tales_of_kupoli/files/entities/misc/effect_tome_buff_1.xml"
+					--LoadGameEffectEntityTo(entity, buff)
+					GetGameEffectLoadTo(entity, "MANA_REGENERATION", true)
+					GamePrint("Buffed with MANA REGENERATION")
+				end
+			end
+		end,
+	},]]--
+	--[[{
+		id          = "TOME_LOOTER",
+		name 		= "$action_kupoli_tome_looter",
+		description = "$actiondesc_kupoli_tome_looter",
+		sprite 		= "mods/tales_of_kupoli/files/spell_icons/tome_looter.png",
+		type 		= ACTION_TYPE_MODIFIER,
+		inject_after = "KUPOLI_UPGRADE_TOME_BETTER",
+		spawn_level                       = "",
+		spawn_probability                 = "",
+		price = 150,
+		mana = 0,
+		action 		= function()
+			dofile_once("mods/tales_of_kupoli/files/scripts/souls.lua")
+			if not reflecting then
+				local entity = GetUpdatedEntityID()
+				local x, y = EntityGetTransform(entity)
+				local tome = EntityGetWithTag("kupoli_tome")[1]
+				local wand = 0
+				local inv_comp = EntityGetFirstComponentIncludingDisabled(entity, "Inventory2Component")
+				if inv_comp then
+					wand = ComponentGetValue2(inv_comp, "mActiveItem")
+				end
+				if wand == tome then
+					-- wip
+					c.extra_entities = c.extra_entities .. "mods/tales_of_kupoli/files/entities/projectiles/reaping_shot/reaping_shot.xml,"
+					c.fire_rate_wait = c.fire_rate_wait + 5
+				else
+					GamePrint("The spell must be casted on the tome.")
+				end
+				draw_actions( 1, true )
+			end
+		end,
+	},
+	{
+		id          = "TOME_SPELL",
+		name 		= "$action_kupoli_tome_spell",
+		description = "$actiondesc_kupoli_tome_spell",
+		sprite 		= "mods/tales_of_kupoli/files/spell_icons/tome_spell.png",
+		type 		= ACTION_TYPE_UTILITY,
+		inject_after = "KUPOLI_TOME_LOOTER",
+		spawn_level                       = "",
+		spawn_probability                 = "",
+		price = 130,
+		mana = 0,
+		max_uses = 5,
+		never_unlimited = true,
+		action 		= function()
+			local x, y = EntityGetTransform(GetUpdatedEntityID())
+			if GetSoulsCount("all") >= 30 then
+				-- create spell
+			end
+			c.fire_rate_wait = c.fire_rate_wait + 30
+		end
+	},]]
+	{
+		id = "SOUL_STRIKE",
+		name = "$action_kupoli_soul_strike",
+		description = "$actiondesc_kupoli_soul_strike",
+        sprite = "mods/tales_of_kupoli/files/spell_icons/soul_strike.png",
+		custom_xml_file="mods/tales_of_kupoli/files/entities/misc/card_soul_strike.xml",
+		type = ACTION_TYPE_MODIFIER,
+		inject_after = "KUPOLI_SOULS_TO_POWER",
+		spawn_level                       = "4,5,6,10",
+		spawn_probability                 = "0.3,0.4,0.4,0.2",
+		price = 100,
+		mana = 70,
+		action = function()
+			if reflecting then return end
+			dofile("mods/tales_of_kupoli/files/scripts/utils.lua")
+			local card = GetUpdatedEntityID()
+			local x, y = EntityGetTransform(GetPlayer())
+			local wand = 0
+			local inv_comp = EntityGetFirstComponentIncludingDisabled(card, "Inventory2Component")
+			if inv_comp then
+				wand = ComponentGetValue2(inv_comp, "mActiveItem")
+			end
+			card = currentcard(wand)
+			local comp_soulstrike = EntityGetFirstComponentIncludingDisabled(card, "VariableStorageComponent", "soul_strike_amount") or 0
+			local soul_strike_amount = ComponentGetValue2(comp_soulstrike, "value_int")
+			for i=1,soul_strike_amount do
+				c.speed_multiplier = c.speed_multiplier * 1.05
+				c.damage_projectile_add = c.damage_projectile_add + 0.15
+				c.extra_entities = c.extra_entities .. "mods/tales_of_kupoli/files/entities/misc/soul_speed_fx.xml,"
+			end
+			ComponentSetValue2(comp_soulstrike, "value_int", 0)
+			c.fire_rate_wait    = c.fire_rate_wait + 20
+			draw_actions(1, true)
+		end,
+	},
 }
 
 for i,v in ipairs(actions_to_insert) do

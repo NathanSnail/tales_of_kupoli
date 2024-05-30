@@ -64,8 +64,6 @@ if sunkills >= 30 and not bered_confirmed then
 	print("bered")
 end
 
--- beblue
--- Hello Mina.
 -- essences
 if ( comp ~= nil ) and ( comp2 ~= nil ) then
 	essences_list = ComponentGetValue2( comp, "value_string" )
@@ -176,12 +174,12 @@ if ( comp ~= nil ) and ( comp2 ~= nil ) then
 	
 	if ( found == 4 ) then
 		if ohno and begreen and bered then
-			EntityLoad("mods/tales_of_kupoli/files/entities/items/wotc/weapon.xml", x, y)
-			GamePrintImportant( "THE GLASSMAKER SEES YOU...", "" ) -- A key reveals itself!
-			AddFlagPersistent( "progress_macrocosm" )
+			EntityLoad("data/entities/animals/kupoli_bluesun_mimic.xml", x, y)
+			--GamePrintImportant( "THE GLASSMAKER SEES YOU...", "" )
+			--AddFlagPersistent( "progress_macrocosm" )
 		elseif ohno == true then
             local sun = EntityLoad("data/entities/items/pickup/sun/newsun_dark.xml", x, y)
-			suninit(sun, 200, 250)
+			--suninit(sun, 200, 250)
 			GamePrintImportant( "The Dark Sun rises...", "" )
 			AddFlagPersistent( "progress_darksun" )
         elseif begreen == true then

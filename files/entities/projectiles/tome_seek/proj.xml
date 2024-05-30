@@ -11,7 +11,7 @@
 
 	<HomingComponent
 		target_tag="homing_target"
-		homing_targeting_coeff="5"
+		homing_targeting_coeff="8"
 		detect_distance="500"
 		homing_velocity_multiplier="1"
 		>
@@ -54,7 +54,7 @@
 		bounces_left="9"
 		bounce_at_any_angle="1"
 		bounce_energy="0.5"
-		lifetime="200"
+		lifetime="400"
 		velocity_sets_rotation="0"
 		penetrate_entities="1"
 		collide_with_world="0"
